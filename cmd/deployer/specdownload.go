@@ -111,7 +111,7 @@ func extractSpec(serviceId string, pathToZip string) (*VersionAndManifest, error
 	}, nil
 }
 
-func downloadArtefacts(vam VersionAndManifest) error {
+func downloadArtefacts(serviceId string, vam VersionAndManifest) error {
 	downloadOne := func(artefactFilename string) error {
 		artefactUrl := strings.Replace(
 			strings.Replace(
@@ -131,7 +131,7 @@ func downloadArtefacts(vam VersionAndManifest) error {
 		}
 		defer resp.Body.Close()
 
-		file, err := os.Create(artefactFilename)
+		file, err := os.Create(workDir(serviceId) + "/" + artefactFilename)
 		if err != nil {
 			return err
 		}

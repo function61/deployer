@@ -42,7 +42,7 @@ func deploy(deployment Deployment) error {
 }
 
 func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, error) {
-	if err := downloadArtefacts(deployment.Vam); err != nil {
+	if err := downloadArtefacts(deployment.UserConfig.ServiceID, deployment.Vam); err != nil {
 		return nil, err
 	}
 
