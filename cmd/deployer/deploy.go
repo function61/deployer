@@ -102,6 +102,12 @@ func deployInternal(serviceId string, url string, asInteractive bool) error {
 		return err
 	}
 
+	// we should always start with a blank slate for workdir (state dir is the only one
+	// that can have state)
+	if err := os.RemoveAll(workDir(serviceId)); err != nil {
+		return err
+	}
+
 	vam, err := downloadAndExtractSpecByUrl(serviceId, url)
 	if err != nil {
 		return err
