@@ -29,3 +29,9 @@ to find out which `deployer_image` to use, ask you about user-specific deploymen
 
 In Onni's case the container image contains [Terraform](https://www.terraform.io/) which
 ultimately takes care of the heavy lifting to call all the relevant AWS APIs.
+
+
+Alternatives
+------------
+
+- [CNAB](https://cnab.io/)?
