@@ -91,6 +91,13 @@ func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, 
 		dockerArgs = append(dockerArgs, shimBinaryMountPoint, "launch-via-shim", "--")
 	}
 
+	// len check so [0] access doesn't fail, though that shouldn't happen
+	useShell := len(commandToRun) > 0 && !strings.HasPrefix(commandToRun[0], "/")
+
+	if useShell {
+		commandToRun = append([]string{"/bin/bash", "--"}, commandToRun...)
+	}
+
 	dockerArgs = append(dockerArgs, commandToRun...)
 
 	return exec.Command(dockerArgs[0], dockerArgs[1:]...), nil
