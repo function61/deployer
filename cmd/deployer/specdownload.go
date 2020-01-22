@@ -91,13 +91,9 @@ func extractSpec(serviceId string, pathToZip string) (*VersionAndManifest, error
 		}
 	}
 
-	manifest := &DeplSpecManifest{}
-	if err := jsonfile.Read(workDir(serviceId)+"/manifest.json", manifest, true); err != nil {
+	manifest, err := readAndValidateManifest(workDir(serviceId))
+	if err != nil {
 		return nil, err
-	}
-
-	if manifest.ManifestVersionMajor != 1 {
-		return nil, fmt.Errorf("unsupported manifest version; got %d", manifest.ManifestVersionMajor)
 	}
 
 	version := &Version{}
@@ -109,6 +105,19 @@ func extractSpec(serviceId string, pathToZip string) (*VersionAndManifest, error
 		Version:  *version,
 		Manifest: *manifest,
 	}, nil
+}
+
+func readAndValidateManifest(dir string) (*DeplSpecManifest, error) {
+	manifest := &DeplSpecManifest{}
+	if err := jsonfile.Read(dir+"/manifest.json", manifest, true); err != nil {
+		return nil, err
+	}
+
+	if manifest.ManifestVersionMajor != 1 {
+		return nil, fmt.Errorf("unsupported manifest version; got %d", manifest.ManifestVersionMajor)
+	}
+
+	return manifest, nil
 }
 
 func downloadArtefacts(serviceId string, vam VersionAndManifest) error {

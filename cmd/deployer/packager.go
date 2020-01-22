@@ -27,7 +27,10 @@ func makePackage(friendlyVersion string, outputFile string) error {
 		return nil
 	}
 
-	// TODO: validate manifest
+	// validate manifest, so we don't accidentally package invalid JSON (fail fast)
+	if _, err := readAndValidateManifest("."); err != nil {
+		return err
+	}
 
 	return filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
