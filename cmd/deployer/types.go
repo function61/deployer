@@ -66,7 +66,7 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 		knownKeys[env.Key] = true
 	}
 
-	for key, _ := range user.Envs {
+	for key := range user.Envs {
 		if _, exists := knownKeys[key]; !exists {
 			return nil, fmt.Errorf("unknown ENV %s defined in user config", key)
 		}
