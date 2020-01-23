@@ -40,7 +40,7 @@ func main() {
 	})
 
 	app.AddCommand(&cobra.Command{
-		Use:   "package [friendlyVersion] [packageLocation]",
+		Use:   "package [friendlyVersion] [outputPackageLocation]",
 		Short: "Packages a spec into a zip",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
