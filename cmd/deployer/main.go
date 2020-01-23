@@ -17,7 +17,7 @@ func main() {
 
 	asInteractive := false
 	deployCmd := &cobra.Command{
-		Use:   "deploy [serviceId] [url]",
+		Use:   `deploy [serviceId] [url: "https://.." | "file://.."]`,
 		Short: "Directly deploys the service",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
@@ -51,7 +51,7 @@ func main() {
 	})
 
 	app.AddCommand(&cobra.Command{
-		Use:   "deployment-init [serviceId] [url]",
+		Use:   `deployment-init [serviceId] [url: "https://.." | "file://.."]`,
 		Short: "Creates a new deployment stub for you to use",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {

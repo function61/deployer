@@ -17,6 +17,11 @@ func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManif
 	ctx, cancel := context.WithTimeout(context.TODO(), ezhttp.DefaultTimeout10s)
 	defer cancel()
 
+	if strings.HasPrefix(url, "file://") {
+		return extractSpec(serviceId, url[len("file://"):])
+	}
+
+	// tempFile because zip.NewReader() requires io.ReaderAt
 	tempFile, cleanupTempFile, err := tempfile.New("deployer")
 	if err != nil {
 		return nil, err
