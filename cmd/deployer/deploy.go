@@ -72,33 +72,39 @@ func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, 
 	// https://twitter.com/joonas_fi/status/1129316321743855616
 	useShim := true
 
+	workDirMount := "/work"
+	if useShim {
+		workDirMount = shimDirectory
+	}
+
 	dockerArgs := append([]string{
 		"docker",
 		"run",
 		"--rm",
 		"-it",
-		"-v", workDir(deployment.UserConfig.ServiceID) + ":" + shimDirectory,
+		"-v", workDir(deployment.UserConfig.ServiceID) + ":" + workDirMount,
 		"-v", stateDir(deployment.UserConfig.ServiceID) + ":/state",
 		"--workdir", "/work",
-	},
-		envsAsDocker...)
+	}, envsAsDocker...)
+
+	pushDockerArg := func(args ...string) { dockerArgs = append(dockerArgs, args...) }
 
 	if useShim {
-		// bind mount us (the process that is currently running) at /shim, so we
-		// can launch ourselves inside the container for bootstrapping the work dir
+		// bind mount us (the process that is currently running) at /shim, so we can launch
+		// ourselves inside the container for doing the shim dance (copy the work dir) inside container
 		ourExecutable, err := os.Executable()
 		if err != nil {
 			return nil, err
 		}
 
-		dockerArgs = append(dockerArgs, "-v", ourExecutable+":"+shimBinaryMountPoint)
+		pushDockerArg("-v", ourExecutable+":"+shimBinaryMountPoint)
 	}
 
-	dockerArgs = append(dockerArgs, deployment.Vam.Manifest.DeployerImage)
+	pushDockerArg(deployment.Vam.Manifest.DeployerImage)
 
 	if useShim {
 		// NOTE: -- to target argv from being parsed for context of the shim
-		dockerArgs = append(dockerArgs, shimBinaryMountPoint, "launch-via-shim", "--")
+		pushDockerArg(shimBinaryMountPoint, "launch-via-shim", "--")
 	}
 
 	// len check so [0] access doesn't fail, though that shouldn't happen
