@@ -1,8 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/function61/gokit/jsonfile"
+	"regexp"
+	"strings"
 )
 
 const (
@@ -47,6 +50,10 @@ type VersionAndManifest struct {
 type Deployment struct {
 	Vam        VersionAndManifest
 	UserConfig UserConfig
+
+	// computed
+	ExpandedDeployCommand            []string
+	ExpandedDeployInteractiveCommand []string
 }
 
 // error is true for os.IsNotExist() if file not found
@@ -74,6 +81,10 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 		}
 	}
 
+	if vam.Manifest.SoftwareUniqueId == "" {
+		return nil, errors.New("SoftwareUniqueId cannot be empty")
+	}
+
 	if user.SoftwareUniqueId != vam.Manifest.SoftwareUniqueId {
 		return nil, fmt.Errorf(
 			"software ID mismatch; deploymentConfig(%s) != deploymentPackage(%s)",
@@ -81,8 +92,55 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 			vam.Manifest.SoftwareUniqueId)
 	}
 
+	expandedDeployCommand := []string{}
+	for _, part := range vam.Manifest.DeployCommand {
+		partExpanded, err := expandPossibleVariables(part, vam)
+		if err != nil {
+			return nil, err
+		}
+
+		expandedDeployCommand = append(expandedDeployCommand, partExpanded)
+	}
+
+	expandedDeployInteractiveCommand := []string{}
+	for _, part := range vam.Manifest.DeployInteractiveCommand {
+		partExpanded, err := expandPossibleVariables(part, vam)
+		if err != nil {
+			return nil, err
+		}
+
+		expandedDeployInteractiveCommand = append(expandedDeployInteractiveCommand, partExpanded)
+	}
+
 	return &Deployment{
 		Vam:        *vam,
 		UserConfig: *user,
+
+		ExpandedDeployCommand:            expandedDeployCommand,
+		ExpandedDeployInteractiveCommand: expandedDeployInteractiveCommand,
 	}, nil
+}
+
+var variableExpansionRe = regexp.MustCompile(`\$\{([^}]+)\}`)
+
+// "--version=${_.version.friendly}" => "--version=v314"
+func expandPossibleVariables(input string, versionAndManifest *VersionAndManifest) (string, error) {
+	expansion := variableExpansionRe.FindStringSubmatch(input)
+	if expansion == nil {
+		return input, nil
+	}
+
+	replace, err := func() (string, error) {
+		switch expansion[1] {
+		case "_.version.friendly":
+			return versionAndManifest.Version.FriendlyVersion, nil
+		default:
+			return "", fmt.Errorf("unknown expansion key: %s", expansion[1])
+		}
+	}()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Replace(input, expansion[0], replace, -1), nil
 }

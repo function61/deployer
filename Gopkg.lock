@@ -3,9 +3,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6110a8ca76d163399c437f35890a36b7f1e258d4f8685f777f39242c1588fa73"
+  digest = "1:9cc4a9a60141c643b6b6a56c6aacd7e74adc53a84b05e5469a5dc8d0c3249e5d"
   name = "github.com/function61/gokit"
   packages = [
+    "assert",
     "atomicfilewrite",
     "dynversion",
     "ezhttp",
@@ -13,7 +14,7 @@
     "jsonfile",
   ]
   pruneopts = "UT"
-  revision = "b30acd36f42adb55b113070ee29ce6fc06c9e861"
+  revision = "c2d99cc8b9622b1365b86d5579af307c329bf349"
 
 [[projects]]
   digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
@@ -51,6 +52,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/function61/gokit/assert",
     "github.com/function61/gokit/dynversion",
     "github.com/function61/gokit/ezhttp",
     "github.com/function61/gokit/fileexists",
