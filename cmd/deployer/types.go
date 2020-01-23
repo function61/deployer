@@ -48,6 +48,7 @@ type Deployment struct {
 	UserConfig UserConfig
 }
 
+// error is true for os.IsNotExist() if file not found
 func loadUserConfig(serviceId string) (*UserConfig, error) {
 	config := &UserConfig{}
 	return config, jsonfile.Read(userConfigPath(serviceId), config, true)

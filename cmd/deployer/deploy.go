@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -109,7 +110,19 @@ func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, 
 func deployInternal(serviceId string, url string, asInteractive bool) error {
 	userConf, err := loadUserConfig(serviceId)
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			fmt.Fprintf(
+				os.Stderr,
+				"Deployment config not found for deployment %s\nPro-tip: run\n\t$ %s deployment-init %s %s\n",
+				serviceId,
+				os.Args[0],
+				serviceId,
+				url)
+
+			return errors.New("config not found")
+		} else {
+			return err
+		}
 	}
 
 	// we should always start with a blank slate for workdir (state dir is the only one

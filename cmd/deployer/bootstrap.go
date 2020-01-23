@@ -16,7 +16,7 @@ func deploymentCreateConfig(serviceId string, url string) error {
 		return err
 	}
 	if !deploymentDirExists {
-		return errors.New("deployments/ directory does not exist")
+		return errors.New("deployments/ directory does not exist - aborting for safety\nIf this is the right location and you're running Deployer for the first time, run:\n\t$ mkdir deployments/")
 	}
 
 	deploymentConfigExists, err := fileexists.Exists(userConfigPath(serviceId))
