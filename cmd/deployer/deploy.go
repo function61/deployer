@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -42,7 +43,9 @@ func deploy(deployment Deployment) error {
 }
 
 func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, error) {
-	if err := downloadArtefacts(deployment.UserConfig.ServiceID, deployment.Vam); err != nil {
+	ctx := context.TODO()
+
+	if err := downloadArtefacts(ctx, deployment.UserConfig.ServiceID, deployment.Vam); err != nil {
 		return nil, err
 	}
 

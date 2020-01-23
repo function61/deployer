@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManifest, error) {
@@ -125,8 +126,8 @@ func readAndValidateManifest(dir string) (*DeplSpecManifest, error) {
 	return manifest, nil
 }
 
-func downloadArtefacts(serviceId string, vam VersionAndManifest) error {
-	downloadOne := func(artefactFilename string) error {
+func downloadArtefacts(ctx context.Context, serviceId string, vam VersionAndManifest) error {
+	downloadOne := func(ctx context.Context, artefactFilename string) error {
 		artefactUrl := strings.Replace(
 			strings.Replace(
 				vam.Manifest.DownloadArtefactUrlTemplate,
@@ -136,7 +137,7 @@ func downloadArtefacts(serviceId string, vam VersionAndManifest) error {
 			artefactFilename,
 			-1)
 
-		ctx, cancel := context.WithTimeout(context.TODO(), ezhttp.DefaultTimeout10s)
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
 		resp, err := ezhttp.Get(ctx, artefactUrl)
@@ -159,7 +160,7 @@ func downloadArtefacts(serviceId string, vam VersionAndManifest) error {
 	}
 
 	for _, artefactFilename := range vam.Manifest.DownloadArtefacts {
-		if err := downloadOne(artefactFilename); err != nil {
+		if err := downloadOne(ctx, artefactFilename); err != nil {
 			return err
 		}
 	}
