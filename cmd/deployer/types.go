@@ -21,9 +21,10 @@ type Version struct {
 }
 
 type DeplSpecManifest struct {
-	ManifestVersionMajor        int          `json:"manifest_version_major"` // SemVer major version
-	DeployerImage               string       `json:"deployer_image"`         // fn61/infrastructureascode:20190107_1257_ec16791b
-	DeployCommand               []string     `json:"deploy_command"`         // ["./deploy.sh"]
+	ManifestVersionMajor        int          `json:"manifest_version_major"`     // SemVer major version
+	DeployerImage               string       `json:"deployer_image"`             // fn61/infrastructureascode:20190107_1257_ec16791b
+	DeployCommand               []string     `json:"deploy_command"`             // ["./deploy.sh"]
+	DeployInteractiveCommand    []string     `json:"deploy_interactive_command"` // defaults to ["/bin/bash"]
 	DownloadArtefacts           []string     `json:"download_artefacts"`
 	DownloadArtefactUrlTemplate string       `json:"download_artefact_urltemplate"`
 	EnvVars                     []EnvVarSpec `json:"env_vars"`           // user configurable stuff

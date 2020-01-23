@@ -10,13 +10,19 @@ import (
 )
 
 func interactive(deployment Deployment) error {
-	dockerRun, err := prepareDockerRun(deployment, []string{"/bin/bash"})
+	interactiveCommand := deployment.Vam.Manifest.DeployInteractiveCommand
+	if len(interactiveCommand) == 0 {
+		interactiveCommand = []string{"/bin/bash"}
+	}
+
+	dockerRun, err := prepareDockerRun(deployment, interactiveCommand)
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf(
-		"Entering interactive mode. Deploy command would have been: %s\n",
+		"Entering interactive mode (%s)\nDeploy command would have been: %s\n",
+		strings.Join(interactiveCommand, " "),
 		strings.Join(deployment.Vam.Manifest.DeployCommand, " "))
 
 	redirectStandardStreams(dockerRun)
