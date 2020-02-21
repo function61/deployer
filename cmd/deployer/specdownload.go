@@ -2,9 +2,9 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/function61/deployer/pkg/tempfile"
 	"github.com/function61/gokit/ezhttp"
 	"github.com/function61/gokit/jsonfile"
 	"io"
@@ -19,15 +19,21 @@ func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManif
 	defer cancel()
 
 	if strings.HasPrefix(url, "file://") {
-		return extractSpec(serviceId, url[len("file://"):])
-	}
+		filename := url[len("file://"):]
 
-	// tempFile because zip.NewReader() requires io.ReaderAt
-	tempFile, cleanupTempFile, err := tempfile.New("deployer")
-	if err != nil {
-		return nil, err
+		file, err := os.Open(filename)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+
+		stat, err := file.Stat()
+		if err != nil {
+			return nil, err
+		}
+
+		return extractSpec(serviceId, file, stat.Size())
 	}
-	defer cleanupTempFile()
 
 	res, err := ezhttp.Get(ctx, url)
 	if err != nil {
@@ -35,26 +41,20 @@ func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManif
 	}
 	defer res.Body.Close()
 
-	if _, err := io.Copy(tempFile, res.Body); err != nil {
+	// buffer because extractSpec() required io.ReaderAt
+	buf := &bytes.Buffer{}
+
+	if _, err := io.Copy(buf, res.Body); err != nil {
 		return nil, err
 	}
 
-	return extractSpec(serviceId, tempFile.Name())
+	bufReader := bytes.NewReader(buf.Bytes())
+
+	return extractSpec(serviceId, bufReader, int64(bufReader.Len()))
 }
 
-func extractSpec(serviceId string, pathToZip string) (*VersionAndManifest, error) {
-	zipFile, err := os.Open(pathToZip)
-	if err != nil {
-		return nil, err
-	}
-	defer zipFile.Close()
-
-	zipStat, err := zipFile.Stat()
-	if err != nil {
-		return nil, err
-	}
-
-	zipReader, err := zip.NewReader(zipFile, zipStat.Size())
+func extractSpec(serviceId string, zipFile io.ReaderAt, size int64) (*VersionAndManifest, error) {
+	zipReader, err := zip.NewReader(zipFile, size)
 	if err != nil {
 		return nil, err
 	}
