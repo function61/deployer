@@ -94,7 +94,7 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 
 	expandedDeployCommand := []string{}
 	for _, part := range vam.Manifest.DeployCommand {
-		partExpanded, err := expandPossibleVariables(part, vam)
+		partExpanded, err := expandPossibleVariables(part, vam, user)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 
 	expandedDeployInteractiveCommand := []string{}
 	for _, part := range vam.Manifest.DeployInteractiveCommand {
-		partExpanded, err := expandPossibleVariables(part, vam)
+		partExpanded, err := expandPossibleVariables(part, vam, user)
 		if err != nil {
 			return nil, err
 		}
@@ -124,16 +124,27 @@ func validateUserConfig(user *UserConfig, vam *VersionAndManifest) (*Deployment,
 var variableExpansionRe = regexp.MustCompile(`\$\{([^}]+)\}`)
 
 // "--version=${_.version.friendly}" => "--version=v314"
-func expandPossibleVariables(input string, versionAndManifest *VersionAndManifest) (string, error) {
+func expandPossibleVariables(input string, versionAndManifest *VersionAndManifest, user *UserConfig) (string, error) {
 	expansion := variableExpansionRe.FindStringSubmatch(input)
 	if expansion == nil {
 		return input, nil
 	}
 
+	key := expansion[1]
+
 	replace, err := func() (string, error) {
-		switch expansion[1] {
-		case "_.version.friendly":
+		switch {
+		case key == "_.version.friendly":
 			return versionAndManifest.Version.FriendlyVersion, nil
+		case strings.HasPrefix(key, "_.env."):
+			realKey := key[len("_.env."):]
+
+			val, found := user.Envs[realKey]
+			if !found {
+				return "", fmt.Errorf("no variable defined in UserConfig: %s", realKey)
+			}
+
+			return val, nil
 		default:
 			return "", fmt.Errorf("unknown expansion key: %s", expansion[1])
 		}
