@@ -29,15 +29,13 @@ func main() {
 		Short: "Directly deploys the service",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := deployInternal(
+			exitWithErrorIfErr(deployInternal(
 				ossignal.InterruptOrTerminateBackgroundCtx(logger),
 				args[0],
 				args[1],
 				asInteractive,
 				keepCache,
-			); err != nil {
-				panic(err)
-			}
+			))
 		},
 	}
 	deployCmd.Flags().BoolVarP(&asInteractive, "interactive", "i", asInteractive, "Enters interactive mode (prompt)")
@@ -45,23 +43,23 @@ func main() {
 
 	app.AddCommand(deployCmd)
 
-	app.AddCommand(&cobra.Command{
-		Use:   "destroy [serviceId]",
-		Short: "Destroys all resources used by service",
-		Args:  cobra.ExactArgs(1),
-		Run: func(_ *cobra.Command, args []string) {
-			panic("not implemented yet")
-		},
-	})
+	/*
+		app.AddCommand(&cobra.Command{
+			Use:   "destroy [serviceId]",
+			Short: "Destroys all resources used by service",
+			Args:  cobra.ExactArgs(1),
+			Run: func(_ *cobra.Command, args []string) {
+				panic("not implemented yet")
+			},
+		})
+	*/
 
 	app.AddCommand(&cobra.Command{
 		Use:   "package [friendlyVersion] [outputPackageLocation]",
 		Short: "Packages a spec into a zip",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := makePackage(args[0], args[1]); err != nil {
-				panic(err)
-			}
+			exitWithErrorIfErr(makePackage(args[0], args[1]))
 		},
 	})
 
@@ -70,13 +68,11 @@ func main() {
 		Short: "Creates a new deployment stub for you to use",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := deploymentCreateConfig(
+			exitWithErrorIfErr(deploymentCreateConfig(
 				ossignal.InterruptOrTerminateBackgroundCtx(logger),
 				args[0],
 				args[1],
-			); err != nil {
-				panic(err)
-			}
+			))
 		},
 	})
 
@@ -85,9 +81,7 @@ func main() {
 		Short: "Creates a new manifest stub for you to use in new project",
 		Args:  cobra.NoArgs,
 		Run: func(_ *cobra.Command, args []string) {
-			if err := manifestStubCreate(os.Stdout); err != nil {
-				panic(err)
-			}
+			exitWithErrorIfErr(manifestStubCreate(os.Stdout))
 		},
 	})
 
@@ -96,9 +90,7 @@ func main() {
 		Hidden: true, // internal implementation
 		Args:   cobra.MinimumNArgs(1),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := launchViaShim(args); err != nil {
-				panic(err)
-			}
+			exitWithErrorIfErr(launchViaShim(args))
 		},
 	})
 
@@ -142,4 +134,11 @@ func stateDir(serviceId string) string {
 
 func userConfigPath(serviceId string) string {
 	return deploymentDir(serviceId) + "/user-config.json"
+}
+
+func exitWithErrorIfErr(err error) {
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
