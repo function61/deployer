@@ -82,6 +82,7 @@ func prepareDockerRun(
 		"-it",
 		"-v", workDir(deployment.UserConfig.ServiceID) + ":" + workDirMount,
 		"-v", stateDir(deployment.UserConfig.ServiceID) + ":/state",
+		"--entrypoint", "", // if image specifies entrypoint, our explicit command would get confused
 		"--workdir", "/work",
 	}, envsAsDocker...)
 
