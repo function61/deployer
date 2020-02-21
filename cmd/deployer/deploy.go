@@ -135,7 +135,7 @@ func deployInternal(
 	}
 
 	if err := downloadRelease(ctx, serviceId, releaseId); err != nil {
-		return err
+		return fmt.Errorf("downloadRelease: %w", err)
 	}
 
 	userConf, err := loadUserConfig(serviceId)
@@ -157,12 +157,12 @@ func deployInternal(
 
 	vam, err := loadVersionAndManifest(serviceId)
 	if err != nil {
-		return err
+		return fmt.Errorf("loadVersionAndManifest: %w", err)
 	}
 
 	deployment, err := validateUserConfig(userConf, vam)
 	if err != nil {
-		return err
+		return fmt.Errorf("validateUserConfig: %w", err)
 	}
 
 	if asInteractive {
@@ -171,7 +171,7 @@ func deployInternal(
 		}
 	} else {
 		if err := deploy(ctx, *deployment); err != nil {
-			return err
+			return fmt.Errorf("deploy: %w", err)
 		}
 	}
 
