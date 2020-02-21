@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/alessio/shellescape"
 	"os"
 	"os/exec"
 	"strings"
@@ -110,10 +111,10 @@ func prepareDockerRun(
 	useShell := len(commandToRun) > 0 && !strings.HasPrefix(commandToRun[0], "/")
 
 	if useShell {
-		commandToRun = append([]string{"/bin/bash", "--"}, commandToRun...)
+		pushDockerArg("/bin/sh", "-c", strings.Join(shellEscape(commandToRun), " "))
+	} else {
+		dockerArgs = append(dockerArgs, commandToRun...)
 	}
-
-	dockerArgs = append(dockerArgs, commandToRun...)
 
 	return exec.Command(dockerArgs[0], dockerArgs[1:]...), nil
 }
@@ -181,4 +182,14 @@ func redirectStandardStreams(cmd *exec.Cmd) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+}
+
+func shellEscape(args []string) []string {
+	escaped := []string{}
+	for _, arg := range args {
+		// TODO: audit the dependency's implementation
+		escaped = append(escaped, shellescape.Quote(arg))
+	}
+
+	return escaped
 }
