@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/function61/gokit/fileexists"
@@ -9,7 +10,7 @@ import (
 	"io"
 )
 
-func deploymentCreateConfig(serviceId string, url string) error {
+func deploymentCreateConfig(ctx context.Context, serviceId string, releaseId string) error {
 	// safety check, because the below logic will create dirs
 	deploymentDirExists, err := fileexists.Exists("deployments")
 	if err != nil {
@@ -30,7 +31,11 @@ func deploymentCreateConfig(serviceId string, url string) error {
 
 	// .. but the deployment for this service must not exist
 
-	vam, err := downloadAndExtractSpecByUrl(serviceId, url)
+	if err := downloadRelease(ctx, serviceId, releaseId); err != nil {
+		return err
+	}
+
+	vam, err := loadVersionAndManifest(serviceId)
 	if err != nil {
 		return err
 	}

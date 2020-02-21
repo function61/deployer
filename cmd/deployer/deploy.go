@@ -9,13 +9,13 @@ import (
 	"strings"
 )
 
-func interactive(deployment Deployment) error {
+func interactive(ctx context.Context, deployment Deployment) error {
 	interactiveCommand := deployment.ExpandedDeployInteractiveCommand
 	if len(interactiveCommand) == 0 {
 		interactiveCommand = []string{"/bin/bash"}
 	}
 
-	dockerRun, err := prepareDockerRun(deployment, interactiveCommand)
+	dockerRun, err := prepareDockerRun(ctx, deployment, interactiveCommand)
 	if err != nil {
 		return err
 	}
@@ -34,8 +34,8 @@ func interactive(deployment Deployment) error {
 	return dockerRun.Wait()
 }
 
-func deploy(deployment Deployment) error {
-	dockerRun, err := prepareDockerRun(deployment, deployment.ExpandedDeployCommand)
+func deploy(ctx context.Context, deployment Deployment) error {
+	dockerRun, err := prepareDockerRun(ctx, deployment, deployment.ExpandedDeployCommand)
 	if err != nil {
 		return err
 	}
@@ -49,13 +49,11 @@ func deploy(deployment Deployment) error {
 	return dockerRun.Wait()
 }
 
-func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, error) {
-	ctx := context.TODO()
-
-	if err := downloadArtefacts(ctx, deployment.UserConfig.ServiceID, deployment.Vam); err != nil {
-		return nil, err
-	}
-
+func prepareDockerRun(
+	ctx context.Context,
+	deployment Deployment,
+	commandToRun []string,
+) (*exec.Cmd, error) {
 	envsAsDocker := []string{}
 
 	addDockerEnv := func(key string, value string) {
@@ -70,7 +68,7 @@ func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, 
 
 	// needed if tools inside container make excessive use of symlinks, like Terraform:
 	// https://twitter.com/joonas_fi/status/1129316321743855616
-	useShim := true
+	useShim := true // TODO: make this opt-in?
 
 	workDirMount := "/work"
 	if useShim {
@@ -119,7 +117,25 @@ func prepareDockerRun(deployment Deployment, commandToRun []string) (*exec.Cmd, 
 	return exec.Command(dockerArgs[0], dockerArgs[1:]...), nil
 }
 
-func deployInternal(serviceId string, url string, asInteractive bool) error {
+func deployInternal(
+	ctx context.Context,
+	serviceId string,
+	releaseId string,
+	asInteractive bool,
+	keepCache bool,
+) error {
+	// we should always start with a blank slate for workdir (state dir is the only one
+	// that can have state)
+	if !keepCache {
+		if err := os.RemoveAll(workDir(serviceId)); err != nil {
+			return err
+		}
+	}
+
+	if err := downloadRelease(ctx, serviceId, releaseId); err != nil {
+		return err
+	}
+
 	userConf, err := loadUserConfig(serviceId)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -129,7 +145,7 @@ func deployInternal(serviceId string, url string, asInteractive bool) error {
 				serviceId,
 				os.Args[0],
 				serviceId,
-				url)
+				releaseId)
 
 			return errors.New("config not found")
 		} else {
@@ -137,13 +153,7 @@ func deployInternal(serviceId string, url string, asInteractive bool) error {
 		}
 	}
 
-	// we should always start with a blank slate for workdir (state dir is the only one
-	// that can have state)
-	if err := os.RemoveAll(workDir(serviceId)); err != nil {
-		return err
-	}
-
-	vam, err := downloadAndExtractSpecByUrl(serviceId, url)
+	vam, err := loadVersionAndManifest(serviceId)
 	if err != nil {
 		return err
 	}
@@ -154,11 +164,11 @@ func deployInternal(serviceId string, url string, asInteractive bool) error {
 	}
 
 	if asInteractive {
-		if err := interactive(*deployment); err != nil {
+		if err := interactive(ctx, *deployment); err != nil {
 			return err
 		}
 	} else {
-		if err := deploy(*deployment); err != nil {
+		if err := deploy(ctx, *deployment); err != nil {
 			return err
 		}
 	}

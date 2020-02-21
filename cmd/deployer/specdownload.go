@@ -3,49 +3,20 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"fmt"
-	"github.com/function61/gokit/ezhttp"
 	"github.com/function61/gokit/jsonfile"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
-func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManifest, error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), ezhttp.DefaultTimeout10s)
-	defer cancel()
-
-	if strings.HasPrefix(url, "file://") {
-		filename := url[len("file://"):]
-
-		file, err := os.Open(filename)
-		if err != nil {
-			return nil, err
-		}
-		defer file.Close()
-
-		stat, err := file.Stat()
-		if err != nil {
-			return nil, err
-		}
-
-		return extractSpec(serviceId, file, stat.Size())
-	}
-
-	res, err := ezhttp.Get(ctx, url)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	// buffer because extractSpec() required io.ReaderAt
+// same as extractSpec, but hides stupid buffering stuff required by io.ReaderAt
+func extractSpecFromReader(serviceId string, zipFile io.Reader) error {
 	buf := &bytes.Buffer{}
 
-	if _, err := io.Copy(buf, res.Body); err != nil {
-		return nil, err
+	if _, err := io.Copy(buf, zipFile); err != nil {
+		return err
 	}
 
 	bufReader := bytes.NewReader(buf.Bytes())
@@ -53,10 +24,10 @@ func downloadAndExtractSpecByUrl(serviceId string, url string) (*VersionAndManif
 	return extractSpec(serviceId, bufReader, int64(bufReader.Len()))
 }
 
-func extractSpec(serviceId string, zipFile io.ReaderAt, size int64) (*VersionAndManifest, error) {
+func extractSpec(serviceId string, zipFile io.ReaderAt, size int64) error {
 	zipReader, err := zip.NewReader(zipFile, size)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	extractOneFile := func(f *zip.File) error {
@@ -93,10 +64,14 @@ func extractSpec(serviceId string, zipFile io.ReaderAt, size int64) (*VersionAnd
 
 	for _, file := range zipReader.File {
 		if err := extractOneFile(file); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
+	return nil
+}
+
+func loadVersionAndManifest(serviceId string) (*VersionAndManifest, error) {
 	manifest, err := readAndValidateManifest(workDir(serviceId))
 	if err != nil {
 		return nil, err
@@ -124,46 +99,4 @@ func readAndValidateManifest(dir string) (*DeplSpecManifest, error) {
 	}
 
 	return manifest, nil
-}
-
-func downloadArtefacts(ctx context.Context, serviceId string, vam VersionAndManifest) error {
-	downloadOne := func(ctx context.Context, artefactFilename string) error {
-		artefactUrl := strings.Replace(
-			strings.Replace(
-				vam.Manifest.DownloadArtefactUrlTemplate,
-				"{version}",
-				vam.Version.FriendlyVersion, -1),
-			"{filename}",
-			artefactFilename,
-			-1)
-
-		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		defer cancel()
-
-		resp, err := ezhttp.Get(ctx, artefactUrl)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		file, err := os.Create(workDir(serviceId) + "/" + artefactFilename)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		if _, err := io.Copy(file, resp.Body); err != nil {
-			return err
-		}
-
-		return file.Close()
-	}
-
-	for _, artefactFilename := range vam.Manifest.DownloadArtefacts {
-		if err := downloadOne(ctx, artefactFilename); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
