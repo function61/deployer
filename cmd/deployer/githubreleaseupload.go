@@ -58,17 +58,37 @@ func createGithubRelease(
 		AccessToken: ghToken,
 	})))
 
-	release, _, err := gitHub.Repositories.CreateRelease(ctx, repo.Owner, repo.Name, &github.RepositoryRelease{
-		Name:            github.String(releaseName),
-		TagName:         github.String(releaseName),
-		TargetCommitish: github.String(revisionId),
-		Draft:           github.Bool(true),
-	})
+	// search for existing releases, because if artefact uploading fails and we've
+	// to re-run this again, we don't want to end up with same release name twice
+	// FIXME: this doesn't take pagination into account
+	existingReleases, _, err := gitHub.Repositories.ListReleases(ctx, repo.Owner, repo.Name, nil)
 	if err != nil {
 		return err
 	}
 
-	releaseID := *release.ID
+	var releaseID int64
+
+	for _, existingRelease := range existingReleases {
+		if *existingRelease.Name == releaseName {
+			releaseID = *existingRelease.ID
+			break
+		}
+	}
+
+	// release not found => create one
+	if releaseID == 0 {
+		createdRelease, _, err := gitHub.Repositories.CreateRelease(ctx, repo.Owner, repo.Name, &github.RepositoryRelease{
+			Name:            github.String(releaseName),
+			TagName:         github.String(releaseName),
+			TargetCommitish: github.String(revisionId),
+			Draft:           github.Bool(true),
+		})
+		if err != nil {
+			return err
+		}
+
+		releaseID = *createdRelease.ID
+	}
 
 	if err := uploadArtefacts(ctx, assetsDir, repo, releaseID, gitHub); err != nil {
 		return err
