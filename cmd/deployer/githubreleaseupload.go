@@ -8,8 +8,10 @@ import (
 	"github.com/function61/deployer/pkg/githubminiclient"
 	"github.com/function61/eventhorizon/pkg/ehevent"
 	"github.com/function61/eventhorizon/pkg/ehreader"
+	"github.com/function61/gokit/backoff"
 	"github.com/function61/gokit/cryptorandombytes"
 	"github.com/function61/gokit/envvar"
+	"github.com/function61/gokit/retry"
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
@@ -144,19 +146,24 @@ func uploadOneArtefact(
 	gh *github.Client,
 	repo githubminiclient.RepoRef,
 ) error {
-	log.Printf("uploading %s", filePath)
+	// I have observed GitHub asset uploads to regularly fail (even from GitHub runners)
+	return retry.Retry(ctx, func(ctx context.Context) error {
+		log.Printf("uploading %s", filePath)
 
-	file, err := os.Open(filePath)
-	if err != nil {
+		file, err := os.Open(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		_, _, err = gh.Repositories.UploadReleaseAsset(ctx, repo.Owner, repo.Name, releaseID, &github.UploadOptions{
+			Name: filepath.Base(filePath),
+		}, file)
+
 		return err
-	}
-	defer file.Close()
-
-	_, _, err = gh.Repositories.UploadReleaseAsset(ctx, repo.Owner, repo.Name, releaseID, &github.UploadOptions{
-		Name: filepath.Base(filePath),
-	}, file)
-
-	return err
+	}, backoff.ExponentialWithCappedMax(1*time.Second, 15*time.Second), func(err error) {
+		log.Printf("upload %s try failed: %v", filePath, err)
+	})
 }
 
 func concurrently(
