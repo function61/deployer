@@ -32,10 +32,11 @@ func listReleases(ctx context.Context) error {
 	}
 
 	releasesTbl := termtables.CreateTable()
-	releasesTbl.AddHeaders("Repo", "Ver", "Id", "Artefact location")
+	releasesTbl.AddHeaders("Time", "Repo", "Ver", "Id", "Artefact location")
 
-	for _, release := range app.State.All() {
+	for _, release := range app.State.AllNewestFirst() {
 		releasesTbl.AddRow(
+			release.Created.Local().Format("Jan 02 @ 15:04"),
 			release.Repository,
 			release.RevisionFriendly,
 			release.Id,

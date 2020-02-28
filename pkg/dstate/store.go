@@ -10,10 +10,12 @@ import (
 	"github.com/function61/gokit/logex"
 	"log"
 	"sync"
+	"time"
 )
 
 type SoftwareRelease struct {
 	Id                   string
+	Created              time.Time
 	Repository           string
 	RevisionFriendly     string
 	RevisionId           string
@@ -68,6 +70,17 @@ func (c *Store) Version() ehclient.Cursor {
 	return c.version
 }
 
+func (c *Store) AllNewestFirst() []SoftwareRelease {
+	all := c.All()
+	// FFS there's no generic slice reverse in Go..
+	count := len(all)
+	reversed := make([]SoftwareRelease, count)
+	for i := 0; i < count; i++ {
+		reversed[i] = all[count-1-i]
+	}
+	return reversed
+}
+
 func (c *Store) All() []SoftwareRelease {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -97,9 +110,9 @@ func (c *Store) processEvent(ev ehevent.Event) error {
 
 	switch e := ev.(type) {
 	case *ddomain.ReleaseCreated:
-
 		c.releases = append(c.releases, SoftwareRelease{
 			Id:                   e.Id,
+			Created:              e.Meta().Timestamp,
 			Repository:           e.Repository,
 			RevisionFriendly:     e.RevisionFriendly,
 			RevisionId:           e.RevisionId,
