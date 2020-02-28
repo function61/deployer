@@ -18,15 +18,7 @@ import (
 )
 
 func listReleases(ctx context.Context) error {
-	tenantCtx, err := ehreader.TenantConfigFromEnv()
-	if err != nil {
-		return err
-	}
-
-	app, err := dstate.LoadUntilRealtime(
-		ctx,
-		dstate.New(tenantCtx.Tenant, nil),
-		tenantCtx.Client)
+	app, err := mkApp(ctx)
 	if err != nil {
 		return err
 	}
@@ -49,15 +41,7 @@ func listReleases(ctx context.Context) error {
 }
 
 func downloadRelease(ctx context.Context, serviceId string, releaseId string) error {
-	tenantCtx, err := ehreader.TenantConfigFromEnv()
-	if err != nil {
-		return err
-	}
-
-	app, err := dstate.LoadUntilRealtime(
-		ctx,
-		dstate.New(tenantCtx.Tenant, nil),
-		tenantCtx.Client)
+	app, err := mkApp(ctx)
 	if err != nil {
 		return err
 	}
@@ -229,4 +213,21 @@ func touch(filename string) error {
 		return err
 	}
 	return file.Close()
+}
+
+func mkApp(ctx context.Context) (*dstate.App, error) {
+	tenantCtx, err := ehreader.TenantCtxFrom(ehreader.ConfigFromEnv)
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := dstate.LoadUntilRealtime(
+		ctx,
+		tenantCtx,
+		nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return app, nil
 }

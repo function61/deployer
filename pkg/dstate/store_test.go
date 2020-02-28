@@ -27,9 +27,10 @@ func TestStore(t *testing.T) {
 			ehevent.MetaSystemUser(t0)),
 	)
 
-	tenant := ehreader.TenantId("42")
-
-	app, err := LoadUntilRealtime(context.Background(), New(tenant, nil), eventLog)
+	app, err := LoadUntilRealtime(
+		context.Background(),
+		ehreader.NewTenantCtx(ehreader.TenantId("42"), eventLog),
+		nil)
 	assert.Ok(t, err)
 
 	releases := app.State.All()

@@ -7,7 +7,6 @@ import (
 	"github.com/function61/deployer/pkg/dstate"
 	"github.com/function61/deployer/pkg/githubminiclient"
 	"github.com/function61/eventhorizon/pkg/ehevent"
-	"github.com/function61/eventhorizon/pkg/ehreader"
 	"github.com/function61/gokit/backoff"
 	"github.com/function61/gokit/cryptorandombytes"
 	"github.com/function61/gokit/envvar"
@@ -37,15 +36,7 @@ func createGithubRelease(
 		return err
 	}
 
-	tenantCtx, err := ehreader.TenantConfigFromEnv()
-	if err != nil {
-		return err
-	}
-
-	app, err := dstate.LoadUntilRealtime(
-		ctx,
-		dstate.New(tenantCtx.Tenant, nil),
-		tenantCtx.Client)
+	app, err := mkApp(ctx)
 	if err != nil {
 		return err
 	}
@@ -103,10 +94,11 @@ func createGithubRelease(
 		"deployerspec.zip",                 // TODO: this shouldn't be hardcoded
 		ehevent.MetaSystemUser(time.Now())) // TODO: time of commit?
 
-	return app.Writer.Append(
+	_, err = app.Writer.Append(
 		ctx,
-		tenantCtx.Tenant.Stream(dstate.Stream),
+		app.TenantCtx.Tenant.Stream(dstate.Stream),
 		[]string{ehevent.Serialize(releaseCreated)})
+	return err
 }
 
 func uploadArtefacts(

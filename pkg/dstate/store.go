@@ -127,13 +127,27 @@ func (c *Store) processEvent(ev ehevent.Event) error {
 }
 
 type App struct {
-	State  *Store
-	Reader *ehreader.Reader
-	Writer ehclient.Writer
+	State     *Store
+	Reader    *ehreader.Reader
+	Writer    ehclient.Writer
+	TenantCtx *ehreader.TenantCtx
 }
 
-func LoadUntilRealtime(ctx context.Context, store *Store, client ehclient.ReaderWriter) (*App, error) {
-	a := &App{store, ehreader.New(store, client), client}
+func LoadUntilRealtime(
+	ctx context.Context,
+	tenantCtx *ehreader.TenantCtx,
+	logger *log.Logger,
+) (*App, error) {
+	store := New(tenantCtx.Tenant, logger)
+
+	a := &App{
+		store,
+		ehreader.New(
+			store,
+			tenantCtx.Client,
+			logger),
+		tenantCtx.Client,
+		tenantCtx}
 
 	if err := a.Reader.LoadUntilRealtime(ctx); err != nil {
 		return nil, err
