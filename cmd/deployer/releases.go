@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
 	"github.com/function61/deployer/pkg/dstate"
 	"github.com/function61/deployer/pkg/githubminiclient"
@@ -15,6 +16,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func listReleases(ctx context.Context) error {
@@ -40,20 +42,59 @@ func listReleases(ctx context.Context) error {
 	return nil
 }
 
-func downloadRelease(ctx context.Context, serviceId string, releaseId string) error {
+func resolveReleaseArtefactsLocationAndDeployerSpecFilename(
+	ctx context.Context,
+	releaseId string,
+) (string, string, error) {
 	app, err := mkApp(ctx)
 	if err != nil {
-		return err
+		return "", "", err
 	}
 
 	release, err := app.State.ById(releaseId)
 	if err != nil {
-		return err
+		return "", "", err
 	}
+
+	return release.ArtefactsLocation, release.DeployerSpecFilename, nil
+}
+
+func downloadRelease(ctx context.Context, serviceId string, releaseId string) error {
+	if strings.Contains(releaseId, ":") {
+		// expecting file:#deployerspec.zip
+		// expecting http://example.com/files/#deployerspec.zip
+		parts := strings.Split(releaseId, "#")
+		if len(parts) != 2 {
+			return fmt.Errorf("don't know how to do hash-less parsing yet: %s", releaseId)
+		}
+
+		return downloadReleaseWith(ctx, serviceId, parts[0], parts[1])
+	} else {
+		artefactsLocation, deployerSpecFilename, err := resolveReleaseArtefactsLocationAndDeployerSpecFilename(
+			ctx,
+			releaseId)
+		if err != nil {
+			return fmt.Errorf("resolveReleaseArtefactsLocationAndDeployerSpecFilename: %w", err)
+		}
+
+		return downloadReleaseWith(ctx, serviceId, artefactsLocation, deployerSpecFilename)
+	}
+}
+
+func downloadReleaseWith(
+	ctx context.Context,
+	serviceId string,
+	artefactsLocation string,
+	deployerSpecFilename string,
+) error {
+	// each unique release has different artefactsLocation, so instead of using releaseId
+	// hash the location to remove dependency to release ID (so we can deploy manually
+	// for testing/dev purposes)
+	approxReleaseId := fmt.Sprintf("%x", sha1.Sum([]byte(deployerSpecFilename)))
 
 	allDownloadedFlagPath := filepath.Join(
 		workDir(serviceId),
-		fmt.Sprintf("_all-downloaded.%s.flag", releaseId))
+		fmt.Sprintf("_all-downloaded.%s.flag", approxReleaseId))
 
 	allDownloaded, err := fileexists.Exists(allDownloadedFlagPath)
 	if err != nil {
@@ -64,6 +105,7 @@ func downloadRelease(ctx context.Context, serviceId string, releaseId string) er
 		return nil // nothing to do here :)
 	}
 
+	// var gmc *githubminiclient.Client
 	ghToken, err := getGitHubToken()
 	if err != nil {
 		return err
@@ -74,9 +116,9 @@ func downloadRelease(ctx context.Context, serviceId string, releaseId string) er
 		return err
 	}
 
-	log.Printf("artefacts source: %s", release.ArtefactsLocation)
+	log.Printf("artefacts source: %s", artefactsLocation)
 
-	artefacts, err := makeArtefactDownloader(release.ArtefactsLocation, gmc)
+	artefacts, err := makeArtefactDownloader(artefactsLocation, gmc)
 	if err != nil {
 		return err
 	}
@@ -85,15 +127,15 @@ func downloadRelease(ctx context.Context, serviceId string, releaseId string) er
 		log.Printf("downloading %s", filename)
 	}
 
-	logDownload(release.DeployerSpecFilename)
+	logDownload(deployerSpecFilename)
 
-	deployerSpecReader, err := artefacts.DownloadArtefact(ctx, release.DeployerSpecFilename)
+	deployerSpecReader, err := artefacts.DownloadArtefact(ctx, deployerSpecFilename)
 	if err != nil {
 		return err
 	}
 	defer deployerSpecReader.Close()
 
-	log.Printf("extracting %s", release.DeployerSpecFilename)
+	log.Printf("extracting %s", deployerSpecFilename)
 
 	if err := extractSpecFromReader(serviceId, deployerSpecReader); err != nil {
 		return err
