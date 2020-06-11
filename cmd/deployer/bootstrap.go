@@ -32,7 +32,7 @@ func deploymentCreateConfig(ctx context.Context, serviceId string, releaseId str
 	// .. but the deployment for this service must not exist
 
 	if err := downloadRelease(ctx, serviceId, releaseId); err != nil {
-		return err
+		return fmt.Errorf("downloadRelease: %w", err)
 	}
 
 	vam, err := loadVersionAndManifest(serviceId)
