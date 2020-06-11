@@ -6,6 +6,8 @@ import (
 	"github.com/function61/deployer/pkg/githubminiclient"
 	"github.com/function61/gokit/ezhttp"
 	"io"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -106,8 +108,28 @@ func (h *httpArtefactDownloader) DownloadArtefact(
 	return res.Body, nil
 }
 
+// in practice makes a copy of a local file
+type localFileDownloader struct {
+	path string
+}
+
+func newLocalFileDownloader(path string) artefactDownloader {
+	return &localFileDownloader{path}
+}
+
+func (f *localFileDownloader) DownloadArtefact(ctx context.Context, filename string) (io.ReadCloser, error) {
+	file, err := os.Open(filepath.Join(f.path, filename))
+	if err != nil {
+		return nil, err
+	}
+
+	return file, nil
+}
+
 func makeArtefactDownloader(uri string, gmc *githubminiclient.Client) (artefactDownloader, error) {
 	switch {
+	case strings.HasPrefix(uri, "file:"):
+		return newLocalFileDownloader(uri[len("file:"):]), nil
 	case strings.HasPrefix(uri, "http:"), strings.HasPrefix(uri, "https:"):
 		return newhttpArtefactDownloader(uri)
 	case strings.HasPrefix(uri, "githubrelease:"):
