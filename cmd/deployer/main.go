@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/function61/gokit/dynversion"
 	"github.com/function61/gokit/logex"
 	"github.com/function61/gokit/ossignal"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 func main() {

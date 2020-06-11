@@ -2,13 +2,14 @@ package dstate
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/function61/deployer/pkg/ddomain"
 	"github.com/function61/eventhorizon/pkg/ehevent"
 	"github.com/function61/eventhorizon/pkg/ehreader"
 	"github.com/function61/eventhorizon/pkg/ehreader/ehreadertest"
 	"github.com/function61/gokit/assert"
-	"testing"
-	"time"
 )
 
 func TestStore(t *testing.T) {

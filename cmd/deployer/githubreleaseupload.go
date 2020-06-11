@@ -3,6 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/function61/deployer/pkg/ddomain"
 	"github.com/function61/deployer/pkg/dstate"
 	"github.com/function61/deployer/pkg/githubminiclient"
@@ -14,11 +20,6 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 	"golang.org/x/sync/errgroup"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 func createGithubRelease(

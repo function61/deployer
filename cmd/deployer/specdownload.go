@@ -4,11 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/function61/gokit/jsonfile"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/function61/gokit/jsonfile"
 )
 
 // same as extractSpec, but hides stupid buffering stuff required by io.ReaderAt

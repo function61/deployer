@@ -3,14 +3,15 @@ package dstate
 import (
 	"context"
 	"fmt"
+	"log"
+	"sync"
+	"time"
+
 	"github.com/function61/deployer/pkg/ddomain"
 	"github.com/function61/eventhorizon/pkg/ehclient"
 	"github.com/function61/eventhorizon/pkg/ehevent"
 	"github.com/function61/eventhorizon/pkg/ehreader"
 	"github.com/function61/gokit/logex"
-	"log"
-	"sync"
-	"time"
 )
 
 // TODO: add software unique ID? repo location changes over renames/relocations

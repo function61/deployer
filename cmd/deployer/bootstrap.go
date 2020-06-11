@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/function61/gokit/fileexists"
 	"github.com/function61/gokit/jsonfile"
-	"github.com/satori/go.uuid"
-	"io"
+	uuid "github.com/satori/go.uuid"
 )
 
 func deploymentCreateConfig(ctx context.Context, serviceId string, releaseId string) error {

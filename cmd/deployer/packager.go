@@ -2,10 +2,11 @@ package main
 
 import (
 	"archive/zip"
-	"github.com/function61/gokit/jsonfile"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/function61/gokit/jsonfile"
 )
 
 func makePackage(friendlyVersion string, outputFile string) error {

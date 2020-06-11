@@ -4,6 +4,12 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/function61/deployer/pkg/dstate"
 	"github.com/function61/deployer/pkg/githubminiclient"
 	"github.com/function61/eventhorizon/pkg/ehreader"
@@ -12,11 +18,6 @@ import (
 	"github.com/function61/gokit/ossignal"
 	"github.com/scylladb/termtables"
 	"github.com/spf13/cobra"
-	"io"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func listReleases(ctx context.Context) error {

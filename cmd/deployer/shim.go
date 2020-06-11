@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/function61/deployer/pkg/recursivefilecopy"
 	"os"
 	"syscall"
+
+	"github.com/function61/deployer/pkg/recursivefilecopy"
 )
 
 const (

@@ -3,14 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/function61/deployer/pkg/githubminiclient"
-	"github.com/function61/gokit/ezhttp"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/function61/deployer/pkg/githubminiclient"
+	"github.com/function61/gokit/ezhttp"
 )
 
 type artefactDownloader interface {

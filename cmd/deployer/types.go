@@ -3,9 +3,10 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/function61/gokit/jsonfile"
 	"regexp"
 	"strings"
+
+	"github.com/function61/gokit/jsonfile"
 )
 
 const (

@@ -4,8 +4,9 @@ package githubminiclient
 import (
 	"context"
 	"fmt"
-	"github.com/function61/gokit/ezhttp"
 	"io"
+
+	"github.com/function61/gokit/ezhttp"
 )
 
 const (

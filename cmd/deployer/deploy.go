@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/alessio/shellescape"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/alessio/shellescape"
 )
 
 func interactive(ctx context.Context, deployment Deployment) error {
