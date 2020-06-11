@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// TODO: add software unique ID? repo location changes over renames/relocations
 type SoftwareRelease struct {
 	Id                   string
 	Created              time.Time
@@ -20,7 +21,7 @@ type SoftwareRelease struct {
 	RevisionFriendly     string
 	RevisionId           string
 	ArtefactsLocation    string
-	DeployerSpecFilename string
+	DeployerSpecFilename string // for the main deployment unit (f.ex. Varasto has > 1 units)
 }
 
 const (
