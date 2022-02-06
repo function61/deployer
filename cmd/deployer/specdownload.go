@@ -79,7 +79,7 @@ func loadVersionAndManifest(serviceId string) (*VersionAndManifest, error) {
 		return nil, err
 	}
 
-	version := &Version{}
+	version := &VersionFile{}
 	if err := jsonfile.Read(workDir(serviceId)+"/"+versionJsonFilename, version, true); err != nil {
 		return nil, err
 	}

@@ -20,7 +20,7 @@ type EnvVarSpec struct {
 	Help        string `json:"help"`
 }
 
-type Version struct {
+type VersionFile struct {
 	FriendlyVersion string `json:"friendly_version"` // 20190107_1257_ec16791b
 }
 
@@ -44,7 +44,7 @@ type UserConfig struct {
 // below datatypes are not serialized
 
 type VersionAndManifest struct {
-	Version  Version
+	Version  VersionFile
 	Manifest DeplSpecManifest
 }
 

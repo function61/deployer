@@ -14,7 +14,7 @@ func TestValidateUserConfig(t *testing.T) {
 			"appId": "myTestApp",
 		},
 	}, &VersionAndManifest{
-		Version: Version{
+		Version: VersionFile{
 			FriendlyVersion: "v314",
 		},
 		Manifest: DeplSpecManifest{

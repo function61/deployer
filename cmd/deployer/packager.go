@@ -24,7 +24,7 @@ func makePackage(friendlyVersion string, outputFile string) error {
 		return err
 	}
 
-	if err := jsonfile.Marshal(versionFile, &Version{FriendlyVersion: friendlyVersion}); err != nil {
+	if err := jsonfile.Marshal(versionFile, &VersionFile{FriendlyVersion: friendlyVersion}); err != nil {
 		return nil
 	}
 
