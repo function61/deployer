@@ -194,11 +194,9 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 		Short: "List all releases",
 		Args:  cobra.NoArgs,
 		Run: func(_ *cobra.Command, args []string) {
-			if err := listReleases(
+			exitWithErrorIfErr(listReleases(
 				ossignal.InterruptOrTerminateBackgroundCtx(logger),
-			); err != nil {
-				panic(err)
-			}
+			))
 		},
 	})
 
@@ -207,16 +205,14 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 		Short: "Create GitHub release",
 		Args:  cobra.ExactArgs(5),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := createGithubRelease(
+			exitWithErrorIfErr(createGithubRelease(
 				ossignal.InterruptOrTerminateBackgroundCtx(logger),
 				args[0],
 				args[1],
 				args[2],
 				args[3],
 				args[4],
-			); err != nil {
-				panic(err)
-			}
+			))
 		},
 	})
 
@@ -225,13 +221,11 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 		Short: "Download release",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
-			if err := downloadRelease(
+			exitWithErrorIfErr(downloadRelease(
 				ossignal.InterruptOrTerminateBackgroundCtx(logger),
 				args[0],
 				args[1],
-			); err != nil {
-				panic(err)
-			}
+			))
 		},
 	})
 
