@@ -1,5 +1,7 @@
-[![Build Status](https://img.shields.io/travis/function61/deployer.svg?style=for-the-badge)](https://travis-ci.org/function61/deployer)
-[![Download](https://img.shields.io/badge/Download-bintray%20latest-blue.svg?style=for-the-badge)](https://bintray.com/function61/dl/deployer/_latestVersion#files)
+⬆️ For table of contents, click the above icon
+
+![Build status](https://github.com/function61/deployer/workflows/Build/badge.svg)
+[![Download](https://img.shields.io/github/downloads/function61/deployer/total.svg?style=for-the-badge)](https://github.com/function61/deployer/releases)
 
 Deploy anything with this container-based deployment tool. It supports using different
 container images to contain the deployment tooling.
