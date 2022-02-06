@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -159,6 +160,9 @@ func uploadOneArtefact(
 	gh *github.Client,
 	repo githubminiclient.RepoRef,
 ) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+	defer cancel()
+
 	// I have observed GitHub asset uploads to regularly fail (even from GitHub runners)
 	return retry.Retry(ctx, func(ctx context.Context) error {
 		log.Printf("uploading %s", filePath)
@@ -169,11 +173,22 @@ func uploadOneArtefact(
 		}
 		defer file.Close()
 
-		_, _, err = gh.Repositories.UploadReleaseAsset(ctx, repo.Owner, repo.Name, releaseID, &github.UploadOptions{
+		_, res, err := gh.Repositories.UploadReleaseAsset(ctx, repo.Owner, repo.Name, releaseID, &github.UploadOptions{
 			Name: filepath.Base(filePath),
 		}, file)
 
-		return err
+		if err != nil {
+			// I witnessed GitHub receive artefact but it still errored to us, so be more
+			// robust against these conditions
+			if res != nil && res.StatusCode == http.StatusUnprocessableEntity {
+				// 422 Validation Failed [{Resource:ReleaseAsset Field:name Code:already_exists Message:}]
+				return nil // was already uploaded so essentially not an error
+			} else {
+				return err
+			}
+		}
+
+		return nil
 	}, backoff.ExponentialWithCappedMax(1*time.Second, 15*time.Second), func(err error) {
 		log.Printf("upload %s try failed: %v", filePath, err)
 	})
