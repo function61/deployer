@@ -117,7 +117,8 @@ func prepareDockerRun(
 		dockerArgs = append(dockerArgs, commandToRun...)
 	}
 
-	return exec.Command(dockerArgs[0], dockerArgs[1:]...), nil
+	//nolint:gosec // ok
+	return exec.CommandContext(ctx, dockerArgs[0], dockerArgs[1:]...), nil
 }
 
 func deployInternal(

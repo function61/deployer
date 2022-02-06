@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
@@ -91,7 +91,7 @@ func downloadReleaseWith(
 	// each unique release has different artefactsLocation, so instead of using releaseId
 	// hash the location to remove dependency to release ID (so we can deploy manually
 	// for testing/dev purposes)
-	approxReleaseId := fmt.Sprintf("%x", sha1.Sum([]byte(deployerSpecFilename)))
+	approxReleaseId := fmt.Sprintf("%x", sha256.Sum256([]byte(deployerSpecFilename)))
 
 	allDownloadedFlagPath := filepath.Join(
 		workDir(serviceId),

@@ -93,8 +93,8 @@ type httpArtefactDownloader struct {
 	baseUrl string
 }
 
-func newhttpArtefactDownloader(uri string) (*httpArtefactDownloader, error) {
-	return &httpArtefactDownloader{uri}, nil
+func newhttpArtefactDownloader(uri string) *httpArtefactDownloader {
+	return &httpArtefactDownloader{uri}
 }
 
 func (h *httpArtefactDownloader) DownloadArtefact(
@@ -132,7 +132,7 @@ func makeArtefactDownloader(uri string, gmc *githubminiclient.Client) (artefactD
 	case strings.HasPrefix(uri, "file:"):
 		return newLocalFileDownloader(uri[len("file:"):]), nil
 	case strings.HasPrefix(uri, "http:"), strings.HasPrefix(uri, "https:"):
-		return newhttpArtefactDownloader(uri)
+		return newhttpArtefactDownloader(uri), nil
 	case strings.HasPrefix(uri, "githubrelease:"):
 		return newGithubReleasesArtefactDownloader(uri, gmc)
 	default:

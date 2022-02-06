@@ -18,6 +18,7 @@ func launchViaShim(argv []string) error {
 		return fmt.Errorf("shim copyFiles failed: %v", err)
 	}
 
+	//nolint:gosec // ok
 	if err := syscall.Exec(argv[0], argv, os.Environ()); err != nil {
 		return fmt.Errorf("exec failed: %v", err)
 	}

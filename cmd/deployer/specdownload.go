@@ -58,6 +58,7 @@ func extractSpec(serviceId string, zipFile io.ReaderAt, size int64) error {
 			return err
 		}
 
+		//nolint:gosec // decompression bomb, but we're not operating on untrusted input.
 		_, err = io.Copy(fsFile, zipFileReader)
 
 		return err

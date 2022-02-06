@@ -154,5 +154,5 @@ func expandPossibleVariables(input string, versionAndManifest *VersionAndManifes
 		return "", err
 	}
 
-	return strings.Replace(input, expansion[0], replace, -1), nil
+	return strings.ReplaceAll(input, expansion[0], replace), nil
 }
