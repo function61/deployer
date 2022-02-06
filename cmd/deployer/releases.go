@@ -20,7 +20,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func listReleases(ctx context.Context) error {
+func listReleasesEntrypoint(logger *log.Logger) *cobra.Command {
+	truncate := true
+
+	cmd := &cobra.Command{
+		Use:   "ls",
+		Short: "List all releases",
+		Args:  cobra.NoArgs,
+		Run: func(_ *cobra.Command, args []string) {
+			exitWithErrorIfErr(listReleases(
+				ossignal.InterruptOrTerminateBackgroundCtx(logger),
+				truncate,
+			))
+		},
+	}
+
+	cmd.Flags().BoolVarP(&truncate, "truncate", "", truncate, "Allow truncating search results")
+
+	return cmd
+}
+
+func listReleases(ctx context.Context, allowTruncate bool) error {
 	app, err := mkApp(ctx)
 	if err != nil {
 		return err
@@ -29,7 +49,19 @@ func listReleases(ctx context.Context) error {
 	releasesTbl := termtables.CreateTable()
 	releasesTbl.AddHeaders("Time", "Repo", "Ver", "Id", "Artefact location")
 
+	const maxToShow = 20
+
+	triedToShow := 0
+
+	resultsTruncated := func() bool { return allowTruncate && triedToShow > maxToShow }
+
 	for _, release := range app.State.AllNewestFirst() {
+		triedToShow++
+
+		if resultsTruncated() {
+			break
+		}
+
 		releasesTbl.AddRow(
 			release.Created.Local().Format("Jan 02 @ 15:04"),
 			release.Repository,
@@ -39,6 +71,10 @@ func listReleases(ctx context.Context) error {
 	}
 
 	fmt.Println(releasesTbl.Render())
+
+	if resultsTruncated() {
+		fmt.Fprintf(os.Stderr, "WARN: showed only %d most recent, there are more results\n", maxToShow)
+	}
 
 	return nil
 }
@@ -189,16 +225,7 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 		Short: "Subcommands for releases",
 	}
 
-	cmd.AddCommand(&cobra.Command{
-		Use:   "ls",
-		Short: "List all releases",
-		Args:  cobra.NoArgs,
-		Run: func(_ *cobra.Command, args []string) {
-			exitWithErrorIfErr(listReleases(
-				ossignal.InterruptOrTerminateBackgroundCtx(logger),
-			))
-		},
-	})
+	cmd.AddCommand(listReleasesEntrypoint(logger))
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "githubrelease-mk [owner] [repo] [releaseName] [revisionId] [assetDir]",
