@@ -5,12 +5,12 @@
 	"builders": [
 		{
 			"name": "default",
-			"uses": "docker://fn61/buildkit-golang:20200423_1235_75c6eae7",
+			"uses": "docker://fn61/buildkit-golang:20220115_1318_71191646",
 			"mount_source": "",
 			"mount_destination": "/workspace",
 			"workdir": "/workspace",
 			"commands": {
-				"build": ["bin/build.sh"],
+				"build": ["build-go-project.sh", "--directory=cmd/deployer/", "--binary-basename=deployer"],
 				"dev": ["bash"]
 			}
 		},
