@@ -110,12 +110,12 @@ deployments/
 |       |-- manifest.json
 |       `-- version.json
 `-- hq
-    |-- state
-    |   `-- terraform-state.json
-    `-- work
-        |-- manifest.json
-        `-- version.json
+|-- state
+|   `-- terraform-state.json
+`-- work
 
+	|-- manifest.json
+	`-- version.json
 */
 func deploymentDir(serviceId string) string {
 	abs, err := filepath.Abs("deployments/" + serviceId)
