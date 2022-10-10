@@ -38,15 +38,6 @@ func createGithubRelease(
 		return err
 	}
 
-	app, err := mkApp(ctx)
-	if err != nil {
-		return err
-	}
-
-	if app.State.HasRevisionId(revisionId) {
-		return fmt.Errorf("already have revision %s", revisionId)
-	}
-
 	gitHub := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: ghToken,
 	})))
@@ -81,6 +72,19 @@ func createGithubRelease(
 		}
 
 		releaseID = *createdRelease.ID
+	}
+
+	if os.Getenv("EVENTHORIZON") == "" { // only notify Event Horizon if we it configured
+		return nil
+	}
+
+	app, err := mkApp(ctx)
+	if err != nil {
+		return err
+	}
+
+	if app.State.HasRevisionId(revisionId) {
+		return fmt.Errorf("already have revision %s", revisionId)
 	}
 
 	if err := uploadArtefacts(ctx, assetsDir, repo, releaseID, gitHub); err != nil {
