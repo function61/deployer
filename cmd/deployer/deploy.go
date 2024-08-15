@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/alessio/shellescape"
+	"github.com/function61/deployer/pkg/dstate"
 )
 
 func interactive(ctx context.Context, deployment Deployment) error {
@@ -136,10 +138,6 @@ func deployInternal(
 		}
 	}
 
-	if err := downloadRelease(ctx, serviceId, releaseId); err != nil {
-		return fmt.Errorf("downloadRelease: %w", err)
-	}
-
 	userConf, err := loadUserConfig(serviceId)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -155,6 +153,26 @@ func deployInternal(
 		} else {
 			return err
 		}
+	}
+
+	app, err := mkApp(ctx)
+	if err != nil {
+		return err
+	}
+
+	if releaseId == "" { // automatically resolve latest
+		var err error
+		releaseId, err = resolveLatestReleaseID(userConf.Repository, app)
+
+		if err != nil {
+			return fmt.Errorf("resolve latest release: %w", err)
+		}
+
+		log.Printf("latest release ID resolved to %s", releaseId)
+	}
+
+	if err := downloadRelease(ctx, serviceId, releaseId, app); err != nil {
+		return fmt.Errorf("downloadRelease: %w", err)
 	}
 
 	vam, err := loadVersionAndManifest(serviceId)
@@ -178,6 +196,20 @@ func deployInternal(
 	}
 
 	return nil
+}
+
+func resolveLatestReleaseID(repository string, app *dstate.App) (string, error) {
+	if repository == "" {
+		return "", errors.New("cannot resolve latest release ID when repository unset")
+	}
+
+	for _, release := range app.State.AllNewestFirst() {
+		if release.Repository == repository {
+			return release.Id, nil
+		}
+	}
+
+	return "", fmt.Errorf("no release found for repo %s", repository)
 }
 
 func redirectStandardStreams(cmd *exec.Cmd) {

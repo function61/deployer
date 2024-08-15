@@ -37,6 +37,7 @@ type DeplSpecManifest struct {
 
 type UserConfig struct {
 	ServiceID        string            `json:"service_id"`
+	Repository       string            `json:"repository"`
 	Envs             map[string]string `json:"envs"`
 	SoftwareUniqueId string            `json:"software_unique_id"`
 }

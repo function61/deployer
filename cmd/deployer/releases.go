@@ -79,24 +79,21 @@ func listReleases(ctx context.Context, allowTruncate bool) error {
 	return nil
 }
 
-func resolveReleaseArtefactsLocationAndDeployerSpecFilename(
-	ctx context.Context,
-	releaseId string,
-) (string, string, error) {
-	app, err := mkApp(ctx)
-	if err != nil {
-		return "", "", err
-	}
-
+func resolveReleaseArtefactsLocationAndDeployerSpecFilename(releaseId string, app *dstate.App) (string, string, error) {
 	release, err := app.State.ById(releaseId)
 	if err != nil {
 		return "", "", err
 	}
 
-	return release.ArtefactsLocation, release.DeployerSpecFilename, nil
+	deployerSpecFilename := release.DeployerSpecFilename
+	if deployerSpecFilename == "" {
+		deployerSpecFilename = "deployerspec.zip"
+	}
+
+	return release.ArtefactsLocation, deployerSpecFilename, nil
 }
 
-func downloadRelease(ctx context.Context, serviceId string, releaseId string) error {
+func downloadRelease(ctx context.Context, serviceId string, releaseId string, app *dstate.App) error {
 	if strings.Contains(releaseId, ":") {
 		// expecting file:#deployerspec.zip
 		// expecting http://example.com/files/#deployerspec.zip
@@ -108,8 +105,8 @@ func downloadRelease(ctx context.Context, serviceId string, releaseId string) er
 		return downloadReleaseWith(ctx, serviceId, parts[0], parts[1])
 	} else {
 		artefactsLocation, deployerSpecFilename, err := resolveReleaseArtefactsLocationAndDeployerSpecFilename(
-			ctx,
-			releaseId)
+			releaseId,
+			app)
 		if err != nil {
 			return fmt.Errorf("resolveReleaseArtefactsLocationAndDeployerSpecFilename: %w", err)
 		}
@@ -248,11 +245,21 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 		Short: "Download release",
 		Args:  cobra.ExactArgs(2),
 		Run: func(_ *cobra.Command, args []string) {
-			exitWithErrorIfErr(downloadRelease(
-				ossignal.InterruptOrTerminateBackgroundCtx(logger),
-				args[0],
-				args[1],
-			))
+			exitWithErrorIfErr(func() error {
+				ctx := ossignal.InterruptOrTerminateBackgroundCtx(logger)
+
+				app, err := mkApp(ctx)
+				if err != nil {
+					return err
+				}
+
+				return downloadRelease(
+					ctx,
+					args[0],
+					args[1],
+					app,
+				)
+			}())
 		},
 	})
 
