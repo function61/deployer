@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"testing"
 
 	"github.com/function61/gokit/assert"
 )
 
 func TestGithubReleases(t *testing.T) {
-	downloader, err := makeArtefactDownloader("githubrelease:function61:coolproduct:12345", nil)
+	downloader, err := makeArtefactDownloader(context.TODO(), "githubrelease:function61:coolproduct:12345", nil)
 
 	assert.Ok(t, err)
 
@@ -19,7 +20,7 @@ func TestGithubReleases(t *testing.T) {
 }
 
 func TestHttp(t *testing.T) {
-	downloader, err := makeArtefactDownloader("http://downloads.example.com/", nil)
+	downloader, err := makeArtefactDownloader(context.TODO(), "http://downloads.example.com/", nil)
 
 	assert.Ok(t, err)
 
@@ -29,7 +30,7 @@ func TestHttp(t *testing.T) {
 }
 
 func TestHttps(t *testing.T) {
-	downloader, err := makeArtefactDownloader("https://downloads.example.com/", nil)
+	downloader, err := makeArtefactDownloader(context.TODO(), "https://downloads.example.com/", nil)
 
 	assert.Ok(t, err)
 
@@ -39,7 +40,7 @@ func TestHttps(t *testing.T) {
 }
 
 func TestUnsupportedUri(t *testing.T) {
-	_, err := makeArtefactDownloader("ftp://stuff", nil)
+	_, err := makeArtefactDownloader(context.TODO(), "ftp://stuff", nil)
 
 	assert.EqualString(t, err.Error(), "unsupported URI: ftp://stuff")
 }

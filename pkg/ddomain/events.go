@@ -17,8 +17,8 @@ type ReleaseCreated struct {
 	Repository           string
 	RevisionFriendly     string
 	RevisionId           string
-	ArtefactsLocation    string // "https://baseurl" if easy to download. or "githubrelease:owner:reponame:releaseId"
-	DeployerSpecFilename string // usually "deployerspec.zip"
+	ArtefactsLocation    string // "https://baseurl" if easy to download. "githubrelease:owner:reponame:releaseId" for GitHub releases. "docker://<image ref>" for (container) images.
+	DeployerSpecFilename string `json:",omitempty"` // usually "deployerspec.zip"
 }
 
 func (e *ReleaseCreated) MetaType() string         { return "ReleaseCreated" }

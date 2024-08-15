@@ -152,7 +152,7 @@ func downloadReleaseWith(
 
 	log.Printf("artefacts source: %s", artefactsLocation)
 
-	artefacts, err := makeArtefactDownloader(artefactsLocation, gmc)
+	artefacts, err := makeArtefactDownloader(ctx, artefactsLocation, gmc)
 	if err != nil {
 		return err
 	}
@@ -229,6 +229,23 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 	}
 
 	cmd.AddCommand(listReleasesEntrypoint(logger))
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "oci-image-release-mk [imageRef] [owner] [repo] [releaseName] [revisionId]",
+		Short: "Create (container) image release",
+		Args:  cobra.ExactArgs(5),
+		Run: func(_ *cobra.Command, args []string) {
+			exitWithErrorIfErr(createOCIImageRelease(
+				ossignal.InterruptOrTerminateBackgroundCtx(logger),
+				args[0],
+				args[1],
+				args[2],
+				args[3],
+				args[4],
+				logger,
+			))
+		},
+	})
 
 	cmd.AddCommand(&cobra.Command{
 		Use:   "githubrelease-mk [owner] [repo] [releaseName] [revisionId] [assetDir]",

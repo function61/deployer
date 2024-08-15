@@ -127,7 +127,7 @@ func (f *localFileDownloader) DownloadArtefact(ctx context.Context, filename str
 	return file, nil
 }
 
-func makeArtefactDownloader(uri string, gmc *githubminiclient.Client) (artefactDownloader, error) {
+func makeArtefactDownloader(ctx context.Context, uri string, gmc *githubminiclient.Client) (artefactDownloader, error) {
 	switch {
 	case strings.HasPrefix(uri, "file:"):
 		return newLocalFileDownloader(uri[len("file:"):]), nil
@@ -135,6 +135,8 @@ func makeArtefactDownloader(uri string, gmc *githubminiclient.Client) (artefactD
 		return newhttpArtefactDownloader(uri), nil
 	case strings.HasPrefix(uri, "githubrelease:"):
 		return newGithubReleasesArtefactDownloader(uri, gmc)
+	case strings.HasPrefix(uri, "docker://"):
+		return newOCIArtefactDownloader(ctx, uri[len("docker://"):])
 	default:
 		return nil, fmt.Errorf("unsupported URI: %s", uri)
 	}
