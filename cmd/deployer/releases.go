@@ -236,6 +236,7 @@ func releasesEntry(logger *log.Logger) *cobra.Command {
 				args[2],
 				args[3],
 				args[4],
+				logger,
 			))
 		},
 	})

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,6 +29,7 @@ func createGithubRelease(
 	releaseName string,
 	revisionId string,
 	assetsDir string,
+	logger *log.Logger,
 ) error {
 	repo := githubminiclient.NewRepoRef(owner, repoName)
 
@@ -83,8 +83,9 @@ func createGithubRelease(
 		return err
 	}
 
-	if app.State.HasRevisionId(revisionId) {
-		return fmt.Errorf("already have revision %s", revisionId)
+	if app.State.HasRevisionId(revisionId) { // should not be considered an error
+		logger.Printf("WARN: already have revision %s", revisionId)
+		return nil
 	}
 
 	if err := uploadArtefacts(ctx, assetsDir, repo, releaseID, gitHub); err != nil {
