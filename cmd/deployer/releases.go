@@ -165,7 +165,7 @@ func downloadReleaseWith(
 
 	deployerSpecReader, err := artefacts.DownloadArtefact(ctx, deployerSpecFilename)
 	if err != nil {
-		return err
+		return fmt.Errorf("download %s: %w", deployerSpecFilename, err)
 	}
 	defer deployerSpecReader.Close()
 
@@ -176,11 +176,13 @@ func downloadReleaseWith(
 	}
 
 	downloadOneArtefact := func(filename string) error { // for defers
+		withErr := func(err error) error { return fmt.Errorf("downloadOneArtefact: %s: %w", filename, err) }
+
 		localFilename := filepath.Join(workDir(serviceId), filename)
 
 		exists, err := fileexists.Exists(localFilename)
 		if err != nil {
-			return err
+			return withErr(err)
 		}
 
 		if exists {
@@ -190,14 +192,18 @@ func downloadReleaseWith(
 
 		artefactContent, err := artefacts.DownloadArtefact(ctx, filename)
 		if err != nil {
-			return err
+			return withErr(err)
 		}
 		defer artefactContent.Close()
 
-		return atomicfilewrite.Write(localFilename, func(dest io.Writer) error {
+		if err := atomicfilewrite.Write(localFilename, func(dest io.Writer) error {
 			_, err := io.Copy(dest, artefactContent)
 			return err
-		})
+		}); err != nil {
+			return withErr(err)
+		}
+
+		return nil
 	}
 
 	vam, err := loadVersionAndManifest(serviceId)
